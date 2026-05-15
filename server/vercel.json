@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npx prisma generate && npx nest build",
+  "buildCommand": "npx prisma generate && npx nest build",
   "functions": {
     "api/index.js": {
       "maxDuration": 30,
