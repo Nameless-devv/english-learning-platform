@@ -1,17 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
-import * as express from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import type { Express } from 'express';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const express = require('express');
 const expressApp = express();
-let cachedApp: Express | null = null;
+let cachedApp: any | null = null;
 
-export async function createApp(): Promise<Express> {
+export async function createApp(): Promise<any> {
   if (cachedApp) return cachedApp;
 
   const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
