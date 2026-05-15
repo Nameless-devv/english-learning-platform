@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum WordLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  role         Role          @default(USER)
+  name         String?
+  streak       Int           @default(0)
+  xp           Int           @default(0)
+  totalMinutes   Int           @default(0)
+  dailyGoal      Int           @default(5)
+  englishLevel   String        @default("A1")
+  onboardingDone Boolean       @default(false)
+  lastActiveAt   DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  progress     UserProgress[]
+  writings     Writing[]
+  dailyPlans   DailyPlan[]
+  refreshTokens RefreshToken[]
+  ieltsResults IeltsResult[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model Word {
+  id          String     @id @default(cuid())
+  word        String     @unique
+  translation String
+  example     String?
+  exampleUz   String?
+  level       WordLevel  @default(A1)
+  category    String?
+  audioUrl    String?
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  progress    UserProgress[]
+  dailyPlanWords DailyPlanWord[]
+
+  @@map("words")
+}
+
+model UserProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  wordId         String
+  interval       Int       @default(0)
+  correctCount   Int       @default(0)
+  incorrectCount Int       @default(0)
+  nextReviewDate DateTime  @default(now())
+  lastReviewedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wordId])
+  @@index([userId, nextReviewDate])
+  @@index([nextReviewDate])
+  @@map("user_progress")
+}
+
+model Writing {
+  id        String   @id @default(cuid())
+  userId    String
+  text      String
+  feedback  Json?
+  score     Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("writings")
+}
+
+model DailyPlan {
+  id        String          @id @default(cuid())
+  userId    String
+  date      DateTime        @db.Date
+  completed Boolean         @default(false)
+  createdAt DateTime        @default(now())
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  words     DailyPlanWord[]
+
+  @@unique([userId, date])
+  @@map("daily_plans")
+}
+
+model IeltsResult {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  band      Float
+  scores    Json
+  feedback  Json
+  prompt    String?
+  text      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ielts_results")
+}
+
+model DailyPlanWord {
+  id          String    @id @default(cuid())
+  dailyPlanId String
+  wordId      String
+  isNew       Boolean   @default(true)
+  completed   Boolean   @default(false)
+
+  dailyPlan DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  word      Word      @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyPlanId, wordId])
+  @@map("daily_plan_words")
+}
