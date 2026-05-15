@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "npm ci && npx prisma generate && npm run build",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "api/index.js" }
+  ]
+}
