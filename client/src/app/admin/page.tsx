@@ -46,10 +46,12 @@ function UserCard({
   user,
   onChangeRole,
   onDelete,
+  onResetPassword,
 }: {
   user: any;
   onChangeRole: (id: string, role: string) => void;
   onDelete: (id: string, email: string) => void;
+  onResetPassword: (id: string, email: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -186,17 +188,24 @@ function UserCard({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => onChangeRole(user.id, user.role)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-medium transition-colors"
+              className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-medium transition-colors"
             >
               <UserCog className="w-4 h-4" />
               {user.role === 'ADMIN' ? 'USER ga o\'zgartir' : 'ADMIN qil'}
             </button>
             <button
+              onClick={() => onResetPassword(user.id, user.email)}
+              className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium transition-colors"
+            >
+              <Shield className="w-4 h-4" />
+              Parol reset
+            </button>
+            <button
               onClick={() => onDelete(user.id, user.email)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium transition-colors"
+              className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium transition-colors"
             >
               <Trash2 className="w-4 h-4" />
               O'chirish
@@ -227,6 +236,11 @@ export default function AdminPage() {
   const [adminForm, setAdminForm] = useState({ email: '', password: '', name: '' });
   const [showAdminPass, setShowAdminPass] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
+
+  const [resetTarget, setResetTarget] = useState<{ id: string; email: string } | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [showResetPass, setShowResetPass] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [genForm, setGenForm] = useState({ topic: '', count: 10 });
@@ -277,6 +291,20 @@ export default function AdminPage() {
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Xato yuz berdi');
     } finally { setAdminLoading(false); }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    if (resetPassword.length < 8) return toast.error("Parol kamida 8 ta belgi bo'lishi kerak");
+    setResetLoading(true);
+    try {
+      await adminService.resetPassword(resetTarget.id, resetPassword);
+      toast.success(`${resetTarget.email} parol yangilandi`);
+      setResetTarget(null);
+      setResetPassword('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Xato yuz berdi');
+    } finally { setResetLoading(false); }
   };
 
   const handleGenerateWords = async () => {
@@ -440,7 +468,7 @@ export default function AdminPage() {
               {/* User cards */}
               <div className="space-y-2">
                 {filteredUsers.map((u) => (
-                  <UserCard key={u.id} user={u} onChangeRole={handleChangeRole} onDelete={handleDeleteUser} />
+                  <UserCard key={u.id} user={u} onChangeRole={handleChangeRole} onDelete={handleDeleteUser} onResetPassword={(id, email) => { setResetTarget({ id, email }); setResetPassword(''); setShowResetPass(false); }} />
                 ))}
                 {filteredUsers.length === 0 && (
                   <div className="text-center py-12 text-gray-400 text-sm">Foydalanuvchi topilmadi</div>
@@ -613,6 +641,54 @@ export default function AdminPage() {
           )}
         </main>
       </div>
+      {/* Reset password modal */}
+      {resetTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900">Parolni reset qilish</h3>
+              <button onClick={() => setResetTarget(null)} className="p-1 rounded-lg hover:bg-gray-100">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              <span className="font-medium text-gray-700">{resetTarget.email}</span> uchun yangi parol
+            </p>
+            <div className="relative mb-4">
+              <input
+                type={showResetPass ? 'text' : 'password'}
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                placeholder="Yangi parol (kamida 8 belgi)"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+              />
+              <button
+                type="button"
+                onClick={() => setShowResetPass((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showResetPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setResetTarget(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={resetLoading || resetPassword.length < 8}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-200 text-white text-sm font-medium transition-colors"
+              >
+                {resetLoading ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }

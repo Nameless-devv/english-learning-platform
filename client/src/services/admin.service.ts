@@ -32,6 +32,11 @@ export const adminService = {
     return data.data;
   },
 
+  async resetPassword(userId: string, newPassword: string) {
+    const { data } = await api.put(`/admin/users/${userId}/reset-password`, { newPassword });
+    return data.data;
+  },
+
   async createWord(wordData: Partial<Word>): Promise<Word> {
     const { data } = await api.post<ApiResponse<Word>>('/admin/words', wordData);
     return data.data;

@@ -42,6 +42,11 @@ export class AdminController {
     return this.adminService.deleteUser(id);
   }
 
+  @Put('users/:id/reset-password')
+  resetPassword(@Param('id') id: string, @Body('newPassword') newPassword: string) {
+    return this.adminService.resetPassword(id, newPassword);
+  }
+
   @Get('users/:id')
   getUserDetails(@Param('id') id: string) {
     return this.adminService.getUserDetails(id);

@@ -145,6 +145,14 @@ export class AdminService {
     return results;
   }
 
+  async resetPassword(userId: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+    return { message: 'Parol muvaffaqiyatli yangilandi' };
+  }
+
   async getUserDetails(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
